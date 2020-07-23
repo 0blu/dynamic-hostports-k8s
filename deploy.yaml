@@ -1,0 +1,103 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: dynamic-hostports
+  labels:
+    name: dynamic-hostports
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dynamic-hostports-account
+  namespace: dynamic-hostports
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynamic-hostports-account-nodes
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynamic-hostports-account-pods
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list","watch","patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dynamic-hostports-account-services
+rules:
+- apiGroups: [""]
+  resources: ["endpoints", "services"]
+  verbs: ["list","create","delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynamic-hostports-account-binding-nodes
+subjects:
+  - kind: ServiceAccount
+    namespace: dynamic-hostports
+    name: dynamic-hostports-account
+    apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: dynamic-hostports-account-nodes
+  apiGroup: ""
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynamic-hostports-account-binding-pods
+subjects:
+  - kind: ServiceAccount
+    namespace: dynamic-hostports
+    name: dynamic-hostports-account
+    apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: dynamic-hostports-account-pods
+  apiGroup: ""
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: dynamic-hostports-account-binding-services
+subjects:
+- kind: ServiceAccount
+  namespace: dynamic-hostports
+  name: dynamic-hostports-account
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: dynamic-hostports-account-services
+  apiGroup: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynamic-hostports-deployment
+  namespace: dynamic-hostports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dynamic-hostports-app
+  template:
+    metadata:
+      labels:
+        app: dynamic-hostports-app
+    spec:
+      serviceAccountName: dynamic-hostports-account
+      containers:
+      - name: dynamic-hostports-container
+        image: 0blu/dynamic-hostport-manager:latest
+        imagePullPolicy: IfNotPresent
+      restartPolicy: Always

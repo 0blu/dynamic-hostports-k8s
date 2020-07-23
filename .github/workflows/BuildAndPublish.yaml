@@ -1,0 +1,19 @@
+name: BuildAndPublish
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - 'src/**'
+jobs:
+  buildAndDeployIfChanged:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          repository: 0blu/dynamic-hostport-manager
+          tag_with_sha: true
+          tags: latest
