@@ -145,8 +145,8 @@ func createService(client *kubernetes.Clientset, pod *v1.Pod, requestedPort int3
 
 func getOrFetchExternalNodeIp(client *kubernetes.Clientset, nodeName string, cachedExternalIPs map[string]string) string {
 	ip := ""
-	ok := false
-	if ip, ok = cachedExternalIPs[nodeName]; ok {
+	knowsIP := false
+	if ip, knowsIP = cachedExternalIPs[nodeName]; !knowsIP {
 		node, err := client.CoreV1().Nodes().Get(context.Background(), nodeName, metav1.GetOptions{})
 		if err != nil {
 			log.Printf("Got an error while fetching external ip of node '%s'. %s", nodeName, err)
@@ -263,6 +263,7 @@ func podManagerRoutine(client *kubernetes.Clientset, namespace string) {
 		logErr.Panicf("Error while create watch for pods %s", err)
 	}
 	eventChannel := watcher.ResultChan()
+	log.Print("Watching pods")
 	for event := range eventChannel {
 		pod, ok := event.Object.(*v1.Pod)
 		if !ok {
@@ -368,6 +369,8 @@ func createClientset() (*kubernetes.Clientset, error) {
 }
 
 func main() {
+	log.Print("Starting...")
+
 	client, err := createClientset()
 	if err != nil {
 		panic(err.Error())
