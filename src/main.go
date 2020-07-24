@@ -258,21 +258,28 @@ func podManagerRoutine(client *kubernetes.Clientset, namespace string) {
 	cachedExternalIPs := make(map[string]string)
 	handledPods := make(map[string]bool)
 
-	watcher, err := client.CoreV1().Pods(namespace).Watch(context.Background(), metav1.ListOptions{LabelSelector: labelKey})
-	if err != nil {
-		logErr.Panicf("Error while create watch for pods %s", err)
-	}
-	eventChannel := watcher.ResultChan()
+	timeout := int64(60 * 60 * 24) // 24 hours
 	log.Print("Watching pods")
-	for event := range eventChannel {
-		pod, ok := event.Object.(*v1.Pod)
-		if !ok {
-			logErr.Panic("Unexpected watch object")
-		}
-		err := handlePodEvent(client, event.Type, pod, handledPods, cachedExternalIPs)
+	for {
+		watcher, err := client.CoreV1().Pods(namespace).Watch(context.Background(), metav1.ListOptions{
+			LabelSelector:  labelKey,
+			TimeoutSeconds: &timeout,
+		})
 		if err != nil {
-			logErr.Printf("[%s] Failed to handle event %s", pod.Name, err)
+			logErr.Panicf("Error while create watch for pods %s", err)
 		}
+		eventChannel := watcher.ResultChan()
+		for event := range eventChannel {
+			pod, ok := event.Object.(*v1.Pod)
+			if !ok {
+				logErr.Panic("Unexpected watch object")
+			}
+			err := handlePodEvent(client, event.Type, pod, handledPods, cachedExternalIPs)
+			if err != nil {
+				logErr.Printf("[%s] Failed to handle event %s", pod.Name, err)
+			}
+		}
+		log.Print("Restart loop")
 	}
 }
 

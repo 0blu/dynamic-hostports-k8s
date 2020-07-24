@@ -99,5 +99,5 @@ spec:
       containers:
       - name: dynamic-hostports-container
         image: 0blu/dynamic-hostport-manager:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
       restartPolicy: Always
