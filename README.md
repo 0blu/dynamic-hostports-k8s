@@ -1,6 +1,6 @@
 # Dynamic hostports for Kubernetes
 
-This tool will let you deploy pods with an dynamic hostport.
+This tool will let you deploy pods with a dynamic hostport.
 Sortof a polyfill for https://github.com/kubernetes/kubernetes/issues/49792
 
 ## How it works
